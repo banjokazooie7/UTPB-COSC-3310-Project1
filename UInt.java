@@ -1,5 +1,7 @@
 /**
  * @auth
+ * Oscar Navarro
+ * COSC 3310 - Project 1
  */
 
 import java.util.Arrays;
@@ -9,8 +11,7 @@ import java.util.Arrays;
  * Represents an unsigned integer using a boolean array to store the binary representation.
  * Each bit is stored as a boolean value, where true represents 1 and false represents 0.
  *
- * @author Tim Fielder
- * @version 1.0 (Sept 30, 2024)
+ * 
  */
 public class UInt {
 
@@ -165,68 +166,238 @@ public class UInt {
     }
 
     public void or(UInt u) {
-        // TODO Complete the bitwise logical OR method
-        return;
+        //sets each bit in the result to 1 if either of the bits in the operands is 1
+        for (int i=0; i < Math.min(this.length, u.length); i++){
+            this.bits[this.length - i -1] = this.bits[this.length - i - 1] | u.bits[u.length - i - 1];
+        }
     }
 
     public static UInt or(UInt a, UInt b) {
-        // TODO Complete the static OR method
-        return null;
+        int maxLen = Math.max(a.length, b.length);
+
+        //create new boolean arrays of length maxLen to hold the bits
+        boolean[] bitsA = new boolean[maxLen];
+        boolean[] bitsB = new boolean[maxLen];
+        //copy aligns least significant bits
+        System.arraycopy(a.bits, 0, bitsA, maxLen - a.length, a.length);
+        System.arraycopy(b.bits, 0, bitsB, maxLen - b.length, b.length);
+
+        //holds bits in boolean array
+        UInt result = new UInt(0);
+        result.length = maxLen;
+        result.bits = new boolean[maxLen];
+        //checks each bit position and performs OR operation
+        for (int i = 0; i < maxLen; i++){
+            result.bits[i] = bitsA[i] | bitsB[i];
+        }
+        return result; 
     }
 
     public void xor(UInt u) {
-        // TODO Complete the bitwise logical XOR method
-        return;
+        //check from 0 to min length then performs xor for the bits in the objects
+        for (int i =0; i < Math.min(this.length, u.length); i++){
+            this.bits[this.length - i - 1] = this.bits[this.length - i - 1] ^ u.bits[u.length - i -1];
+        }
     }
 
     public static UInt xor(UInt a, UInt b) {
-        // TODO Complete the static XOR method
-        return null;
+        int maxLen = Math.max(a.length, b.length);
+        //create two new boolean arrays of the maximum length
+        boolean[] bitsA = new boolean[maxLen];
+        boolean[] bitsB = new boolean[maxLen];
+        //both arrays have the same length and are properly aligned
+        System.arraycopy(a.bits, 0, bitsA, maxLen - a.length, a.length);
+        System.arraycopy(b.bits, 0, bitsB, maxLen - b.length, b.length);
+
+        //creates a object to store the result of the XOR operation
+        UInt result = new UInt(0);
+        result.length = maxLen;
+        result.bits = new boolean[maxLen];
+        //checks each bit position and applies the xor
+        for (int i = 0; i < maxLen; i++){
+            result.bits[i] = bitsA[i] ^ bitsB[i];
+        }
+        return result;
     }
 
     public void add(UInt u) {
-        // TODO Using a ripple-carry adder, perform addition using a passed UINT object
-        // The result will be stored in this.bits
-        // You will likely need to create a couple of helper methods for this.
-        // Note this one, like the bitwise ops, also needs to be aligned on the 1s place.
-        // Also note this may require increasing the length of this.bits to contain the result.
-        return;
+        int maxLen = Math.max(this.length, u.length);
+        //stores result of addition
+        boolean[] result = new boolean[maxLen +1];
+        //creates new arrays of maxLen size to align the bits
+        boolean[] bitsA = new boolean[maxLen];
+        boolean[] bitsB = new boolean[maxLen];
+        System.arraycopy(this.bits, 0, bitsA, maxLen - this.length, this.length);
+        System.arraycopy(u.bits, 0, bitsB, maxLen - u.length, u.length);
+        //carry is needed when a 1 needs to be passed over
+        boolean carry = false;
+        //bitwise addition then stores it in the array
+        for(int i = maxLen - 1; i >= 0; i--){
+            boolean sum = bitsA[i] ^ bitsB[i] ^ carry;
+            carry = (bitsA[i] && bitsB[i]) || (bitsA[i] && carry) || (bitsB[i] && carry);
+            result[i + 1] = sum;
+        }
+
+        result[0] = carry;
+        //replaces current bit with result array then updates length
+        if (result[0]){
+            this.bits = result;
+            this.length = result.length - 1;
+        }
     }
 
     public static UInt add(UInt a, UInt b) {
-        // TODO A static change-safe version of add, should return a temp UInt object like the bitwise ops.
-        return null;
+        //max length of the two objects
+        int maxLen = Math.max(a.length, b.length);
+        //creates new arrays to store the aligned bit positions of a and b
+        boolean[] bitsA = new boolean[maxLen];
+        boolean[] bitsB = new boolean[maxLen];
+        System.arraycopy(a.bits, 0, bitsA, maxLen - a.length, a.length);
+        System.arraycopy(b.bits, 0, bitsB, maxLen - b.length, b.length);
+        //new array stores the sum along with carry overflow
+        boolean[] result = new boolean[maxLen +1];
+        boolean carry = false;
+        //loop all the bits of the aligned array starts with LSB of the array
+        for(int i = maxLen - 1; i >= 0; i--){
+            boolean sum = bitsA[i] ^ bitsB[i] ^ carry;
+            //update the carry value
+            carry = (bitsA[i] && bitsB[i]) || (bitsA[i] && carry) || (bitsB[i] && carry);
+            result[i + 1] = sum;
+        }
+        result[0] = carry;
+        //this will hold the result in a object
+        UInt temp = new UInt(0);
+        //assigns the result to the array
+        if(carry){
+            temp.length = result.length;
+            temp.bits = result;
+        }else{
+            //else copy the significant bits of the result 
+            temp.length = result.length - 1;
+            temp.bits = Arrays.copyOfRange(result, 1, result.length);
+        }
+        return temp;
     }
 
     public void negate() {
-        // TODO You'll need a way to perform 2's complement negation
-        // The add() method will be helpful with this.
+        //this loop will flip each bit for 2s complement
+        for(int i = 0; i < this.length; i++){
+            this.bits[i] = !this.bits[i];
+        }
+        //new object with value of 1 then adds 1 for the negathin required
+        UInt newOne = new UInt(1);
+        this.add(newOne);
     }
 
     public void sub(UInt u) {
-        // TODO Using negate() and add(), perform in-place subtraction
-        // As this class is supposed to handle only unsigned values,
-        //   if the result of the subtraction operation would be a negative number then it should be coerced to 0.
-        return;
+        //clones the input object 
+        UInt negU = UInt.clone(u);
+        negU.negate();
+        //add negated value
+        this.add(negU);
+        //checks is the value is negative then resets to zero
+        if(this.toInt() < 0){
+            this.bits = new boolean[1];
+            this.length =1;
+        }
     }
 
     public static UInt sub(UInt a, UInt b) {
-        // TODO And a static change-safe version of sub
-        return null;
+        //create clones of the original operands and negate the second one
+        UInt result = UInt.clone(a);
+        UInt negB = UInt.clone(b);
+        negB.negate();
+        result.add(negB);
+        //convert the result to an Int
+        if(result.toInt() < 0){
+            return new UInt(0);
+        }
+        return result;
     }
 
     public void mul(UInt u) {
-        // TODO Using Booth's algorithm, perform multiplication
-        // This one will require that you increase the length of bits, up to a maximum of X+Y.
-        // Having negate() and add() will obviously be useful here.
-        // Also note the Booth's always treats binary values as if they are signed,
-        //   while this class is only intended to use unsigned values.
-        // This means that you may need to pad your bits array with a leading 0 if it's not already long enough.
-        return;
+        //calculates the max possible length of the product array
+        int maxLen = this.length + u.length;
+        //aligns the bits to the rightmost positions in the array
+        boolean[] multiplies = new boolean[maxLen];
+        System.arraycopy(this.bits, 0, multiplies, maxLen - this.length, this.length);
+        
+        boolean[] multiPlier = new boolean[maxLen];
+        System.arraycopy(u.bits, 0, multiPlier, maxLen - u.length, u.length);
+        //array stores the final results
+        boolean[] product = new boolean[maxLen];
+        //
+        for(int i = 0; i < maxLen; i++){
+            //if the bit is 1 the multiplicand is added to the product
+            if(multiPlier[maxLen - i - 1]){
+                product = addBinary(product, shiftLeft(multiplies, i));
+            }
+        }
+        //removes leading zeros from the array
+        this.bits = deleteZeros(product);
+        this.length = this.bits.length;
     }
 
     public static UInt mul(UInt a, UInt b) {
-        // TODO A static, change-safe version of mul
-        return null;
+        //max possible length of the array
+        int maxLen = a.length + b.length;
+        //stores the bits of a and aligns the rightmost positions of a new array
+        boolean[] multiplies = new boolean[maxLen];
+        System.arraycopy(a.bits, 0, multiplies, maxLen - a.length, a.length);
+
+        boolean[] multiPlier = new boolean[maxLen];
+        System.arraycopy(b.bits, 0, multiPlier, maxLen - b.length, b.length);
+        //holds partial products during the loop
+        boolean[] product = new boolean[maxLen];
+        //loops through each bit of the multiPlier
+        for(int i=0; i < maxLen; i++){
+            //if the bit is 1 multiPlier is added to the product after being shifted
+            if(multiPlier[maxLen - i - 1]){
+                product = addBinary(product, shiftLeft(multiplies, i));
+            }
+        }
+        //deletes unnecessary zeros
+        product = deleteZeros(product);
+        //assign the final result array to result.bits
+        UInt result = new UInt(0);
+        result.bits = product;
+        //change result.length to show the length of the product array
+        result.length = product.length;
+        return result;
+    }
+    ////////////////////*********************Helper Methods************************************//////////////////////////////////
+    private static boolean[] addBinary(boolean[] a, boolean[] b){
+        //makes sure the length of the array will have enough space to hold the addition results
+        int maxLen = Math.max(a.length, b.length);
+        boolean[] result = new boolean[maxLen + 1];
+
+        boolean carry = false;
+        //loops each bit from LSB to most significant then performs bitwise addition
+        for(int i = 0; i < maxLen; i++){
+            boolean bitA = i < a.length ? a[a.length - i - 1] : false;
+            boolean bitB = i < b.length ? b[b.length - i - 1] : false;
+
+            result[maxLen - i] = bitA ^ bitB ^ carry;
+            carry = (bitA && bitB) || (bitA && carry) || (bitB && carry);
+        }
+        result[0] = carry;
+
+        return result;
+    }
+    private static boolean[] shiftLeft(boolean[] bits, int spot){
+        //create a new array big enough to cover the original bits
+        boolean[] shift = new boolean[bits.length + spot];
+        //empty positions are padded false
+        System.arraycopy(bits, 0, shift, 0, bits.length);
+        return shift;
+    }
+    public static boolean[] deleteZeros(boolean[] bits){
+        //checks the index of the first binary 1 in the array
+        int leader = 0;
+        //increments until it reaches the first 1
+        while(leader < bits.length && !bits[leader]){
+            leader++;
+        }
+        return Arrays.copyOfRange(bits, leader, bits.length);
     }
 }
